@@ -1,0 +1,591 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{PhoneWatchBlue}{HTML}{1D4ED8}
+\definecolor{PhoneWatchSlate}{HTML}{0F172A}
+\definecolor{PhoneWatchGray}{HTML}{64748B}
+\definecolor{CodeBackground}{HTML}{F8FAFC}
+
+\hypersetup{
+  pdftitle={PhoneWatch Project Report},
+  pdfauthor={PhoneWatch Project},
+  pdfsubject={Real-Time Phone Usage Detection},
+  pdfkeywords={computer vision, YOLO, OpenCV, phone detection, Streamlit, Python}
+}
+
+\lstdefinestyle{phonewatch}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{CodeBackground},
+  frame=single,
+  rulecolor=\color{PhoneWatchGray},
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\lstset{style=phonewatch}
+
+\setstretch{1.18}
+\setlist[itemize]{topsep=4pt,itemsep=2pt,leftmargin=1.5em}
+\setlist[enumerate]{topsep=4pt,itemsep=2pt,leftmargin=1.8em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\textcolor{PhoneWatchGray}{PhoneWatch Project Report}}
+\rhead{\textcolor{PhoneWatchGray}{\leftmark}}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\titleformat{\chapter}
+  {\normalfont\huge\bfseries\color{PhoneWatchSlate}}
+  {\thechapter}{1em}{}
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{PhoneWatchSlate}}
+  {\thesection}{0.8em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{PhoneWatchSlate}}
+  {\thesubsection}{0.8em}{}
+
+\newcommand{\projectname}{PhoneWatch}
+\newcommand{\projectrepo}{\url{https://github.com/emanamjad61/phonewatch}}
+\newcommand{\codepath}[1]{\path{#1}}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  \vspace*{1.0cm}
+  {\Huge\bfseries\color{PhoneWatchSlate} PhoneWatch\par}
+  \vspace{0.35cm}
+  {\Large\bfseries Real-Time Phone Usage Detection System\par}
+  \vspace{1.2cm}
+  {\large Project Report\par}
+  \vfill
+  \begin{tabular}{>{\bfseries}rl}
+    Repository: & \projectrepo \\
+    Primary Language: & Python \\
+    Core Stack: & YOLO, OpenCV, MediaPipe, Streamlit \\
+    Report Date: & April 22, 2026 \\
+  \end{tabular}
+  \vfill
+  {\large Prepared for the PhoneWatch project repository\par}
+  \vspace*{1.0cm}
+\end{titlepage}
+
+\pagenumbering{roman}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+\projectname{} is a computer-vision system designed to detect phone usage in real time from webcam, image, and video sources. The project combines object detection, contextual analysis, alert rendering, logging, training utilities, benchmarking, and a Streamlit dashboard into a single Python application. The detection pipeline uses a YOLO-compatible model to identify people and phones, then applies spatial context and hand-proximity analysis to decide whether a detected phone is likely being used. When usage is detected, the system renders visual overlays and records alert/session data for later review.
+
+This report documents the problem context, objectives, requirements, architecture, implementation, dataset strategy, testing approach, operational workflow, limitations, and future development roadmap of the \projectname{} system. It is written as a formal project artifact for maintainers, evaluators, and future contributors.
+
+\tableofcontents
+\listoftables
+
+\clearpage
+\pagenumbering{arabic}
+
+\chapter{Introduction}
+
+\section{Project Overview}
+
+\projectname{} is a Python-based computer vision project for monitoring visible phone usage in camera feeds. The system is intended for demonstration, research, and prototype monitoring scenarios where a user wants to detect when a phone appears to be held or used by a person. It provides:
+
+\begin{itemize}
+  \item real-time webcam inference;
+  \item image and video file inference;
+  \item contextual phone-use classification;
+  \item visual alert overlays in meme and serious modes;
+  \item session logging and alert history;
+  \item dataset preparation and training utilities;
+  \item benchmarking and diagnostics;
+  \item a Streamlit dashboard for live monitoring and analytics.
+\end{itemize}
+
+The repository is organized around a single command-line entry point, \codepath{run.py}, with reusable modules under \codepath{src/}. Runtime outputs are written to \codepath{logs/}, trained models are stored under \codepath{models/checkpoints/}, and local datasets are stored under \codepath{data/}.
+
+\section{Problem Statement}
+
+Phone usage in monitored environments is difficult to detect reliably using simple object detection alone. A detector can identify a phone, but it cannot always determine whether the phone is being used, resting on a desk, visible in the background, or merely near a person. A useful system therefore needs both detection and context reasoning.
+
+The central problem addressed by \projectname{} is:
+
+\begin{quote}
+How can a real-time computer-vision application identify phones and people, infer likely phone usage from visual context, and provide actionable alerts with usable logs and dashboard visibility?
+\end{quote}
+
+\section{Objectives}
+
+The project objectives are:
+
+\begin{enumerate}
+  \item Detect phone and person objects in webcam, image, and video inputs.
+  \item Infer whether a detected phone is likely in active use.
+  \item Produce real-time annotated frames with bounding boxes and status overlays.
+  \item Generate alert records when phone usage is detected.
+  \item Support multiple alert presentation modes for formal and demonstration contexts.
+  \item Provide a dashboard for live monitoring and historical analytics.
+  \item Provide dataset, training, benchmarking, and test utilities for continued development.
+  \item Maintain a clean, reproducible, and professional repository structure.
+\end{enumerate}
+
+\section{Scope}
+
+The project is scoped as a prototype and applied computer-vision system. It is not a production surveillance product and should not be deployed in privacy-sensitive environments without additional consent, policy controls, and security review. Its primary purpose is to demonstrate an end-to-end detection workflow with practical engineering structure.
+
+\chapter{Requirements}
+
+\section{Functional Requirements}
+
+\begin{longtable}{p{0.16\textwidth}p{0.76\textwidth}}
+\caption{Functional requirements}\\
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+\endhead
+FR-01 & The system shall process live webcam frames. \\
+FR-02 & The system shall process image files and video files. \\
+FR-03 & The system shall detect phone and person classes. \\
+FR-04 & The system shall infer phone usage using contextual features, not only phone presence. \\
+FR-05 & The system shall draw annotated output frames including bounding boxes and labels. \\
+FR-06 & The system shall support meme and serious alert modes. \\
+FR-07 & The system shall apply alert cooldowns to avoid excessive repeated alerts. \\
+FR-08 & The system shall write session and alert logs under \codepath{logs/}. \\
+FR-09 & The system shall expose a Streamlit dashboard for monitoring and analytics. \\
+FR-10 & The system shall include dataset preparation and training utilities. \\
+FR-11 & The system shall include smoke tests, unit tests, and benchmarking scripts. \\
+\bottomrule
+\end{longtable}
+
+\section{Nonfunctional Requirements}
+
+\begin{longtable}{p{0.16\textwidth}p{0.76\textwidth}}
+\caption{Nonfunctional requirements}\\
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+\endhead
+NFR-01 & The runtime workflow should be reproducible from documented commands. \\
+NFR-02 & The codebase should separate source, datasets, model artifacts, and runtime logs. \\
+NFR-03 & The system should avoid committing large generated datasets and output recordings. \\
+NFR-04 & The CLI should provide clear user-facing error messages for missing files, models, and camera access. \\
+NFR-05 & The dashboard should keep the detection worker isolated from the Streamlit rendering loop. \\
+NFR-06 & The repository should be maintainable with a clear README, ignore policy, and test runner. \\
+NFR-07 & The system should degrade gracefully when optional dashboard plotting dependencies are unavailable. \\
+\bottomrule
+\end{longtable}
+
+\chapter{System Architecture}
+
+\section{High-Level Architecture}
+
+The \projectname{} application is organized as a layered pipeline. Inputs enter through the CLI or dashboard, frames are passed to the detection engine, usage context is inferred, alerts are generated, and outputs are logged or displayed.
+
+\begin{table}[h!]
+\centering
+\caption{Architecture layers}
+\begin{tabularx}{\textwidth}{p{0.20\textwidth}X}
+\toprule
+\textbf{Layer} & \textbf{Responsibility} \\
+\midrule
+Entry Points & \codepath{run.py}, \codepath{quick_test.py}, \codepath{benchmark.py}, and \codepath{dashboard/app.py}. \\
+Detection Engine & \codepath{PhoneWatchEngine} loads the model, processes frames, draws annotations, logs sessions, and coordinates alert overlays. \\
+Context Classifier & \codepath{PhoneUsageDetector} evaluates person-phone geometry and hand proximity. \\
+Alert System & \codepath{AlertSystem} applies meme or serious overlays, cooldowns, sound alerts, and alert logging. \\
+Data Pipeline & \codepath{DatasetManager}, \codepath{AugmentationPipeline}, and training utilities prepare data and train checkpoints. \\
+Observability & Session CSVs, alert logs, dashboard charts, benchmark outputs, and test reports. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Frame Processing Flow}
+
+Each frame follows the same conceptual sequence:
+
+\begin{enumerate}
+  \item Capture or load a frame from webcam, video, or image source.
+  \item Run YOLO inference for the target classes.
+  \item Normalize detections into project-level dictionaries.
+  \item Separate phone and person detections.
+  \item Analyze spatial context between each phone and nearest person.
+  \item Analyze hand proximity using MediaPipe hand landmarks when available.
+  \item Produce one or more \codepath{UsageEvent} records.
+  \item Draw object boxes, usage labels, alert overlays, and status HUD.
+  \item Update session statistics and write session CSV rows.
+  \item Emit cooldown-limited alert records when phone usage is active.
+\end{enumerate}
+
+\section{Repository Structure}
+
+\begin{longtable}{p{0.26\textwidth}p{0.66\textwidth}}
+\caption{Repository structure}\\
+\toprule
+\textbf{Path} & \textbf{Purpose} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Path} & \textbf{Purpose} \\
+\midrule
+\endhead
+\codepath{src/detect.py} & Main detection engine, model loading, inference, annotation, session logging. \\
+\codepath{src/context.py} & Phone-use context classifier using bounding boxes and hand landmarks. \\
+\codepath{src/alerts.py} & Alert overlay rendering, cooldown logic, and alert records. \\
+\codepath{src/dataset.py} & Dataset acquisition, conversion, merge, split, and augmentation helpers. \\
+\codepath{src/train.py} & YOLO training workflow and checkpoint management. \\
+\codepath{src/demo_mode.py} & Presentation-oriented demo mode with overlays and recording. \\
+\codepath{src/utils.py} & Shared configuration, logging, dataset analysis, diagnostics, and drawing helpers. \\
+\codepath{dashboard/app.py} & Streamlit dashboard for live feed, controls, analytics, and model information. \\
+\codepath{run.py} & Main CLI entry point for webcam, demo, image, video, train, setup, and dashboard. \\
+\codepath{tests/} & Pytest suite covering dataset, context, alerts, and engine behavior. \\
+\codepath{models/checkpoints/} & Trained and fallback model checkpoints. \\
+\codepath{data/} & Local dataset workspace, intentionally ignored for large generated folders. \\
+\codepath{logs/} & Runtime output directory, intentionally ignored except for \codepath{.gitkeep}. \\
+\bottomrule
+\end{longtable}
+
+\chapter{Methodology}
+
+\section{Object Detection}
+
+\projectname{} uses a YOLO-compatible detector through the Ultralytics runtime interface. The model is configured to detect the project classes \codepath{phone} and \codepath{person}. The runtime parameters are loaded from \codepath{config.yaml}; the default confidence threshold is 0.5, the IoU threshold is 0.45, and the image size is 640 pixels.
+
+The engine prefers the trained checkpoint \codepath{models/checkpoints/phonewatch_best.pt}. If that checkpoint is unavailable, it falls back to \codepath{models/checkpoints/yolov8n.pt} and then to the standard Ultralytics model resolution path.
+
+\section{Contextual Phone-Use Classification}
+
+Detecting a phone is not sufficient to decide whether the phone is being used. \projectname{} therefore performs context analysis through \codepath{PhoneUsageDetector}. The classifier combines:
+
+\begin{itemize}
+  \item nearest-person association;
+  \item intersection-over-union and center-distance calculations;
+  \item relative vertical position of the phone within the person box;
+  \item heuristics for phones resting on surfaces;
+  \item MediaPipe hand landmark proximity around the phone box.
+\end{itemize}
+
+This produces a structured \codepath{UsageEvent} with fields such as \codepath{in_use}, \codepath{confidence}, \codepath{method_used}, \codepath{person_id}, \codepath{phone_id}, and \codepath{reason}. The classifier is designed to reduce false positives from isolated phones and phones resting on desks while still flagging likely hand-held usage.
+
+\section{Alert Strategy}
+
+The alert system applies cooldown-limited alerts per person. When a usage event is active, \codepath{AlertSystem} renders either:
+
+\begin{itemize}
+  \item \textbf{meme mode}: a meme image overlay with a caption; or
+  \item \textbf{serious mode}: a high-visibility red alert banner and bounding box emphasis.
+\end{itemize}
+
+Alert records are written to \codepath{logs/alert_log.csv}. The default alert mode is \codepath{meme}, and the default cooldown is 5 seconds.
+
+\section{Dataset Strategy}
+
+The dataset utilities support local and external YOLO-style data workflows. \codepath{DatasetManager} can prepare COCO phone-class examples, merge YOLO datasets, create train/validation/test splits, and write the \codepath{data.yaml} file expected by the training stack. \codepath{AugmentationPipeline} provides augmentation support for improving robustness.
+
+Large generated data folders are intentionally excluded from git:
+
+\begin{itemize}
+  \item \codepath{data/raw/}
+  \item \codepath{data/processed/}
+  \item \codepath{data/augmented/}
+\end{itemize}
+
+This keeps the repository clean while preserving a reproducible data workspace.
+
+\chapter{Implementation}
+
+\section{Command-Line Interface}
+
+The CLI in \codepath{run.py} is the main user entry point. It validates model paths, checks camera access, creates the detection engine, and dispatches to the selected mode.
+
+\begin{longtable}{p{0.30\textwidth}p{0.58\textwidth}}
+\caption{Primary commands}\\
+\toprule
+\textbf{Command} & \textbf{Purpose} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Purpose} \\
+\midrule
+\endhead
+\codepath{python run.py webcam --camera 0} & Run live webcam detection. \\
+\codepath{python run.py demo --camera 0} & Run presentation demo mode with enhanced overlays. \\
+\codepath{python run.py video --input data/demo.mp4} & Run inference on a video file. \\
+\codepath{python run.py image --input data/test.jpg} & Run inference on a single image. \\
+\codepath{python run.py train --data data/processed/data.yaml} & Train using a YOLO data YAML file. \\
+\codepath{python run.py dashboard} & Launch the Streamlit dashboard. \\
+\codepath{python run.py setup} & Prepare datasets and first-time assets. \\
+\bottomrule
+\end{longtable}
+
+\section{Detection Engine}
+
+\codepath{PhoneWatchEngine} is responsible for:
+
+\begin{itemize}
+  \item loading configuration and model weights;
+  \item resolving target class IDs;
+  \item running inference per frame;
+  \item parsing YOLO results;
+  \item invoking the phone-use classifier;
+  \item drawing live annotations;
+  \item applying alert overlays;
+  \item updating FPS and session statistics;
+  \item writing frame-level session records.
+\end{itemize}
+
+The engine supports webcam, video, image, benchmark, and presentation-demo modes. It also provides backward compatibility through \codepath{PhoneWatchDetector}.
+
+\section{Dashboard}
+
+The Streamlit dashboard in \codepath{dashboard/app.py} provides an interactive interface for live detection and analytics. It uses a background worker thread for detection so that the Streamlit interface can render controls and charts independently of frame processing. Dashboard capabilities include:
+
+\begin{itemize}
+  \item start, stop, and reset controls;
+  \item mode and confidence controls;
+  \item live frame display;
+  \item FPS, alert, and duration metrics;
+  \item alert and usage analytics;
+  \item model and dataset information panels;
+  \item benchmark summaries.
+\end{itemize}
+
+\section{Training And Benchmarking}
+
+Training is handled by \codepath{PhoneWatchTrainer}. It loads the project configuration, trains against a YOLO data YAML file, and produces checkpoints and training outputs. Benchmarking is handled by \codepath{benchmark.py}, which includes tests for inference speed, context classifier behavior, end-to-end latency, and memory profile.
+
+\section{Configuration}
+
+\codepath{config.yaml} centralizes project settings. Table~\ref{tab:config-summary} summarizes the most relevant values.
+
+\begin{table}[h!]
+\centering
+\caption{Configuration summary}
+\label{tab:config-summary}
+\begin{tabularx}{\textwidth}{p{0.24\textwidth}X}
+\toprule
+\textbf{Category} & \textbf{Configured Values} \\
+\midrule
+Model & Weights path, confidence threshold 0.5, IoU threshold 0.45, image size 640. \\
+Dataset & Raw, processed, augmented, train, validation, and label paths. \\
+Training & 50 epochs, batch size 16, learning rate 0.001, automatic device selection. \\
+Alerts & Meme mode by default, 5 second cooldown, meme image directory. \\
+Dashboard & Streamlit port 8501. \\
+Classes & \codepath{phone} and \codepath{person}. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\chapter{Testing And Quality Assurance}
+
+\section{Test Coverage}
+
+The pytest suite covers the most important internal contracts:
+
+\begin{itemize}
+  \item YOLO label conversion and dataset merge behavior;
+  \item train/validation/test split integrity;
+  \item context classification for desk, near-face, no-person, and multi-person cases;
+  \item alert cooldown, mode toggle, serious overlay, and meme overlay behavior;
+  \item engine initialization, single-frame processing, output format, and benchmark behavior.
+\end{itemize}
+
+The tests use synthetic frames and mocks where appropriate. This reduces dependence on a physical camera during automated testing.
+
+\section{Smoke Testing}
+
+\codepath{quick_test.py} provides an end-to-end smoke test without requiring a webcam. It either downloads a small sample video or generates a synthetic clip with OpenCV drawing, then runs the engine over a limited number of frames and saves an annotated sample frame.
+
+\section{Manual Verification}
+
+Manual verification should include:
+
+\begin{enumerate}
+  \item Running \codepath{python run.py --help} to verify CLI availability.
+  \item Running \codepath{python quick_test.py} after dependency installation.
+  \item Running \codepath{python run.py webcam --camera 0} with a real webcam.
+  \item Running \codepath{python run.py dashboard} and validating dashboard controls.
+  \item Reviewing \codepath{logs/alert_log.csv} and \codepath{logs/session_*.csv}.
+\end{enumerate}
+
+\section{Known Test Environment Constraint}
+
+The cleaned repository intentionally excludes local virtual environments. A fresh checkout must run \codepath{./setup_env.sh} before full tests can be executed. Without the project dependencies, commands such as \codepath{pytest} and model inference will fail in a bare Python environment.
+
+\chapter{Operational Workflow}
+
+\section{Setup Workflow}
+
+\begin{lstlisting}[language=bash,caption={Local setup workflow}]
+chmod +x setup_env.sh run_tests.sh
+./setup_env.sh
+source .venv/bin/activate
+\end{lstlisting}
+
+\section{Live Detection Workflow}
+
+\begin{lstlisting}[language=bash,caption={Live webcam detection}]
+python run.py webcam --camera 0 --mode meme --confidence 0.5
+\end{lstlisting}
+
+\section{Dashboard Workflow}
+
+\begin{lstlisting}[language=bash,caption={Launch dashboard}]
+python run.py dashboard
+\end{lstlisting}
+
+\section{Demo Workflow}
+
+\begin{lstlisting}[language=bash,caption={Presentation demo mode}]
+python run.py demo --camera 0
+\end{lstlisting}
+
+\chapter{Privacy, Safety, And Ethical Considerations}
+
+Computer-vision systems that observe people require careful handling. \projectname{} should be treated as a prototype and demonstration system unless additional governance is added. Responsible deployment requires:
+
+\begin{itemize}
+  \item clear consent from monitored individuals;
+  \item visible notice that camera-based analysis is active;
+  \item strict retention limits for logs and recordings;
+  \item access controls for dashboards, logs, and model outputs;
+  \item review of local laws and organizational policies;
+  \item procedures for handling false positives and false negatives.
+\end{itemize}
+
+The system currently writes local logs and can record demo video output. Operators should avoid collecting or retaining unnecessary personal data.
+
+\chapter{Limitations}
+
+\section{Technical Limitations}
+
+\begin{itemize}
+  \item Detection accuracy depends on the model checkpoint and training data quality.
+  \item Phone-use classification is heuristic and can produce false positives or false negatives.
+  \item Hand-landmark analysis can be affected by occlusion, lighting, motion blur, and camera angle.
+  \item Real-time performance depends on hardware, device selection, frame size, and model size.
+  \item The dashboard is intended for local use and does not include production authentication.
+  \item The repository excludes large datasets; reproducibility of training requires rebuilding or restoring local data.
+\end{itemize}
+
+\section{Operational Limitations}
+
+\begin{itemize}
+  \item Webcam access requires operating-system camera permission.
+  \item Only one process should use the same camera at a time.
+  \item The default alert cooldown may need tuning for different environments.
+  \item Logs are local runtime outputs and are not automatically rotated or encrypted.
+\end{itemize}
+
+\chapter{Future Work}
+
+Recommended future improvements include:
+
+\begin{enumerate}
+  \item Add a reviewed license file.
+  \item Add CI after enabling GitHub token workflow permissions.
+  \item Add structured model cards for checkpoints.
+  \item Add a dataset versioning strategy using a tool such as DVC or external storage.
+  \item Add configurable camera source selection in the dashboard.
+  \item Add role-based access control if the dashboard becomes network accessible.
+  \item Add alert export formats such as JSON Lines and Parquet.
+  \item Add calibration tools for confidence thresholds and cooldown settings.
+  \item Add a small reproducible evaluation subset with documented metrics.
+  \item Add privacy controls for redaction or non-retention of raw frames.
+\end{enumerate}
+
+\chapter{Conclusion}
+
+\projectname{} provides a complete prototype for real-time phone-use detection. It combines model inference, context-aware classification, alert rendering, logging, dashboard monitoring, training, benchmarking, and testing into a maintainable Python codebase. The architecture is modular enough for continued improvement, while the cleaned repository structure supports professional review and future collaboration.
+
+The current implementation is best understood as a strong applied computer-vision project foundation. With further work on evaluation datasets, privacy controls, production hardening, and CI, it can evolve from a demonstration system into a more reliable operational tool.
+
+\appendix
+
+\chapter{Appendix A: Command Reference}
+
+\begin{longtable}{p{0.42\textwidth}p{0.48\textwidth}}
+\caption{Command reference}\\
+\toprule
+\textbf{Command} & \textbf{Description} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Command} & \textbf{Description} \\
+\midrule
+\endhead
+\codepath{./setup_env.sh} & Create local virtual environment and install dependencies. \\
+\codepath{source .venv/bin/activate} & Activate local environment. \\
+\codepath{python run.py --help} & Show CLI usage. \\
+\codepath{python run.py webcam --camera 0} & Run real-time webcam mode. \\
+\codepath{python run.py demo --camera 0} & Run presentation demo mode. \\
+\codepath{python run.py video --input <file>} & Run video-file inference. \\
+\codepath{python run.py image --input <file>} & Run image inference. \\
+\codepath{python run.py train --data data/processed/data.yaml} & Start training. \\
+\codepath{python run.py dashboard} & Launch Streamlit dashboard. \\
+\codepath{python quick_test.py} & Run webcam-free smoke test. \\
+\codepath{python benchmark.py} & Run benchmark suite. \\
+\codepath{./run_tests.sh} & Run pytest suite with coverage report. \\
+\bottomrule
+\end{longtable}
+
+\chapter{Appendix B: Key Runtime Artifacts}
+
+\begin{longtable}{p{0.36\textwidth}p{0.54\textwidth}}
+\caption{Runtime artifacts}\\
+\toprule
+\textbf{Artifact} & \textbf{Purpose} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Artifact} & \textbf{Purpose} \\
+\midrule
+\endhead
+\codepath{logs/alert_log.csv} & Cooldown-limited phone-use alert records. \\
+\codepath{logs/session_*.csv} & Per-frame session summaries and usage events. \\
+\codepath{logs/screenshots/} & Optional screenshots saved during detection. \\
+\codepath{logs/demo_recording_*.mp4} & Demo mode recordings. \\
+\codepath{logs/coverage_report/} & HTML coverage output from tests. \\
+\codepath{models/checkpoints/phonewatch_best.pt} & Preferred trained PhoneWatch checkpoint. \\
+\codepath{models/checkpoints/phonewatch_best.onnx} & ONNX export of the trained checkpoint. \\
+\codepath{models/checkpoints/yolov8n.pt} & Fallback YOLO checkpoint. \\
+\bottomrule
+\end{longtable}
+
+\chapter{Appendix C: Repository Publication}
+
+The project has been published as a private GitHub repository at:
+
+\begin{center}
+\projectrepo
+\end{center}
+
+The repository metadata describes the project as real-time phone-use detection with YOLO, OpenCV, contextual alerts, and a Streamlit dashboard. The configured topics are Python, computer vision, YOLO, OpenCV, Streamlit, and phone detection.
+
+\end{document}

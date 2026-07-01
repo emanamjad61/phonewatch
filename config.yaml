@@ -1,0 +1,39 @@
+project:
+  name: PhoneWatch
+  log_file: logs/alerts.jsonl
+
+model:
+  model_size: models/checkpoints/yolov8n
+  weights: models/checkpoints/yolov8n.pt
+  confidence_threshold: 0.5
+  iou_threshold: 0.45
+  img_size: 640
+
+dataset:
+  root: data
+  raw: data/raw
+  processed: data/processed
+  augmented: data/augmented
+  train_images: data/processed/images/train
+  val_images: data/processed/images/val
+  train_labels: data/processed/labels/train
+  val_labels: data/processed/labels/val
+  data_yaml: data/processed/data.yaml
+
+training:
+  epochs: 50
+  batch_size: 16
+  learning_rate: 0.001
+  device: auto
+
+alerts:
+  mode: meme
+  cooldown_seconds: 5
+  meme_dir: memes
+
+dashboard:
+  port: 8501
+
+classes:
+  - phone
+  - person

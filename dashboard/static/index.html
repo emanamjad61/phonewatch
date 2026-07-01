@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PhoneWatch Control Center</title>
+    <link rel="stylesheet" href="https://unpkg.com/7.css" />
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="desktop-backdrop"></div>
+    <main class="desktop-shell">
+      <section class="window active glass hero-window">
+        <div class="title-bar">
+          <div class="title-bar-text">PhoneWatch Control Center</div>
+          <div class="title-bar-controls">
+            <button aria-label="Minimize" disabled></button>
+            <button aria-label="Maximize" disabled></button>
+            <button aria-label="Close" disabled></button>
+          </div>
+        </div>
+        <div class="window-body">
+          <header class="hero-copy">
+            <div>
+              <p class="eyebrow">Vision Monitoring Console</p>
+              <h1>Windows 7 styling, thin client behavior, minimal runtime overhead.</h1>
+            </div>
+            <div class="hero-badges">
+              <span class="hero-badge">7.css shell</span>
+              <span class="hero-badge">MJPEG live feed</span>
+              <span class="hero-badge">Vanilla JS</span>
+            </div>
+          </header>
+
+          <section class="workspace-grid">
+            <article class="window active primary-panel">
+              <div class="title-bar">
+                <div class="title-bar-text">Monitoring Station</div>
+                <div class="title-bar-controls">
+                  <button aria-label="Help" disabled></button>
+                  <button aria-label="Close" disabled></button>
+                </div>
+              </div>
+              <div class="window-body has-space">
+                <section class="tabs dashboard-tabs">
+                  <menu role="tablist" aria-label="PhoneWatch dashboard tabs" class="justified">
+                    <button type="button" role="tab" aria-controls="tab-live" aria-selected="true">Live</button>
+                    <button type="button" role="tab" aria-controls="tab-analytics">Analytics</button>
+                    <button type="button" role="tab" aria-controls="tab-model">Model</button>
+                  </menu>
+
+                  <article role="tabpanel" id="tab-live">
+                    <div class="live-layout">
+                      <div class="video-card">
+                        <div class="video-stage">
+                          <img id="live-stream" alt="PhoneWatch live stream" hidden />
+                          <div class="video-placeholder" id="video-placeholder">
+                            <strong>Stand by.</strong>
+                            <span>Start detection to open the live camera feed.</span>
+                          </div>
+                        </div>
+                        <div class="status-strip">
+                          <div class="stat-chip">
+                            <span class="stat-label">FPS</span>
+                            <strong id="stat-fps">0.0</strong>
+                          </div>
+                          <div class="stat-chip">
+                            <span class="stat-label">Alerts</span>
+                            <strong id="stat-alerts">0</strong>
+                          </div>
+                          <div class="stat-chip">
+                            <span class="stat-label">Duration</span>
+                            <strong id="stat-duration">0.0s</strong>
+                          </div>
+                          <div class="stat-chip">
+                            <span class="stat-label">Detections</span>
+                            <strong id="stat-detections">0</strong>
+                          </div>
+                          <div class="stat-chip">
+                            <span class="stat-label">Usage Events</span>
+                            <strong id="stat-usage-events">0</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <aside class="control-column">
+                        <fieldset>
+                          <legend>Control Pad</legend>
+                          <div class="group">
+                            <label for="mode-select">Alert mode</label>
+                            <select id="mode-select">
+                              <option value="meme">Meme</option>
+                              <option value="serious">Serious</option>
+                            </select>
+                          </div>
+                          <div class="group">
+                            <label for="confidence-range">Confidence threshold</label>
+                            <div class="range-row">
+                              <input id="confidence-range" type="range" min="0.1" max="1" step="0.05" value="0.5" />
+                              <span id="confidence-value">0.50</span>
+                            </div>
+                          </div>
+                          <div class="group">
+                            <label for="camera-input">Camera index</label>
+                            <input id="camera-input" type="number" min="0" step="1" value="0" />
+                          </div>
+                          <div class="action-row">
+                            <button class="default" id="start-button" type="button">Start / Apply</button>
+                            <button id="stop-button" type="button">Stop</button>
+                            <button id="reset-button" type="button">Reset</button>
+                          </div>
+                        </fieldset>
+
+                        <fieldset>
+                          <legend>Session Status</legend>
+                          <div class="stacked-lines">
+                            <p><strong>Engine:</strong> <span id="engine-status">Stopped</span></p>
+                            <p><strong>Last alert:</strong> <span id="last-alert">No alerts yet.</span></p>
+                            <p><strong>Message:</strong> <span id="engine-message">Idle.</span></p>
+                          </div>
+                        </fieldset>
+
+                        <fieldset>
+                          <legend>Notes</legend>
+                          <div class="stacked-lines compact">
+                            <p>The frontend is static HTML, CSS, and one JS file.</p>
+                            <p>The live view uses a single MJPEG stream instead of rerendering the whole page.</p>
+                            <p>Analytics and model tabs lazy-load on demand.</p>
+                          </div>
+                        </fieldset>
+                      </aside>
+                    </div>
+                  </article>
+
+                  <article role="tabpanel" id="tab-analytics" hidden>
+                    <div class="tab-toolbar">
+                      <div class="searchbox analytics-search">
+                        <input id="analytics-search" type="search" placeholder="Search events" />
+                        <button aria-label="search" type="button" id="analytics-refresh"></button>
+                      </div>
+                    </div>
+
+                    <div class="summary-grid">
+                      <div class="summary-card">
+                        <span class="summary-label">Alerts today</span>
+                        <strong id="analytics-alerts-today">0</strong>
+                      </div>
+                      <div class="summary-card">
+                        <span class="summary-label">Most active hour</span>
+                        <strong id="analytics-most-active-hour">No data yet</strong>
+                      </div>
+                      <div class="summary-card">
+                        <span class="summary-label">Average alert duration</span>
+                        <strong id="analytics-average-duration">No data yet</strong>
+                      </div>
+                    </div>
+
+                    <div class="table-stack">
+                      <section>
+                        <h3>Alerts by Hour</h3>
+                        <div class="table-wrap">
+                          <table class="has-shadow" id="alerts-by-hour-table">
+                            <thead>
+                              <tr>
+                                <th>Hour</th>
+                                <th>Alerts</th>
+                              </tr>
+                            </thead>
+                            <tbody></tbody>
+                          </table>
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3>Alerts by Person</h3>
+                        <div class="table-wrap">
+                          <table class="has-shadow" id="alerts-by-person-table">
+                            <thead>
+                              <tr>
+                                <th>Person</th>
+                                <th>Alerts</th>
+                              </tr>
+                            </thead>
+                            <tbody></tbody>
+                          </table>
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3>Usage Breakdown</h3>
+                        <div class="table-wrap">
+                          <table class="has-shadow" id="usage-breakdown-table">
+                            <thead>
+                              <tr>
+                                <th>Status</th>
+                                <th>Count</th>
+                              </tr>
+                            </thead>
+                            <tbody></tbody>
+                          </table>
+                        </div>
+                      </section>
+
+                      <section>
+                        <h3>Recent Events</h3>
+                        <div class="table-wrap">
+                          <table class="has-shadow" id="events-table">
+                            <thead>
+                              <tr>
+                                <th>Time</th>
+                                <th>Person</th>
+                                <th>Confidence</th>
+                                <th>Mode</th>
+                                <th>Duration</th>
+                              </tr>
+                            </thead>
+                            <tbody></tbody>
+                          </table>
+                        </div>
+                      </section>
+                    </div>
+                  </article>
+
+                  <article role="tabpanel" id="tab-model" hidden>
+                    <div class="summary-grid">
+                      <div class="summary-card">
+                        <span class="summary-label">Model</span>
+                        <strong id="model-name">No data yet</strong>
+                      </div>
+                      <div class="summary-card">
+                        <span class="summary-label">Parameters</span>
+                        <strong id="model-parameters">No data yet</strong>
+                      </div>
+                      <div class="summary-card">
+                        <span class="summary-label">Layers</span>
+                        <strong id="model-layers">No data yet</strong>
+                      </div>
+                    </div>
+
+                    <div class="summary-grid">
+                      <div class="summary-card">
+                        <span class="summary-label">Final mAP@50</span>
+                        <strong id="training-map50">No data yet</strong>
+                      </div>
+                      <div class="summary-card">
+                        <span class="summary-label">Best epoch</span>
+                        <strong id="training-best-epoch">No data yet</strong>
+                      </div>
+                      <div class="summary-card">
+                        <span class="summary-label">Training time</span>
+                        <strong id="training-time">No data yet</strong>
+                      </div>
+                    </div>
+
+                    <div class="model-layout">
+                      <section>
+                        <h3>Dataset</h3>
+                        <div class="summary-inline">
+                          <span>Total images:</span>
+                          <strong id="dataset-total-images">No data yet</strong>
+                        </div>
+                        <div class="table-wrap">
+                          <table class="has-shadow" id="dataset-table">
+                            <thead>
+                              <tr>
+                                <th>Class</th>
+                                <th>Count</th>
+                              </tr>
+                            </thead>
+                            <tbody></tbody>
+                          </table>
+                        </div>
+                      </section>
+
+                      <section>
+                        <div class="benchmark-header">
+                          <h3>Benchmark</h3>
+                          <div class="benchmark-actions">
+                            <button class="default" id="benchmark-button" type="button">Run Benchmark</button>
+                            <span class="loader" id="benchmark-loader" aria-label="Benchmark running" hidden></span>
+                          </div>
+                        </div>
+                        <div class="table-wrap">
+                          <table class="has-shadow" id="benchmark-table">
+                            <thead>
+                              <tr>
+                                <th>Device</th>
+                                <th>Average FPS</th>
+                                <th>Frames</th>
+                                <th>Elapsed Seconds</th>
+                                <th>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody></tbody>
+                          </table>
+                        </div>
+                      </section>
+                    </div>
+                  </article>
+                </section>
+              </div>
+              <div class="status-bar">
+                <p class="status-bar-field" id="footer-status">Ready</p>
+                <p class="status-bar-field" id="footer-mode">Mode: Meme</p>
+                <p class="status-bar-field" id="footer-confidence">Confidence: 0.50</p>
+              </div>
+            </article>
+
+            <aside class="side-stack">
+              <article class="window glass active info-panel">
+                <div class="title-bar">
+                  <div class="title-bar-text">Quick View</div>
+                  <div class="title-bar-controls">
+                    <button aria-label="Help" disabled></button>
+                    <button aria-label="Close" disabled></button>
+                  </div>
+                </div>
+                <div class="window-body has-space">
+                  <fieldset>
+                    <legend>Why this frontend is faster</legend>
+                    <ul class="side-list">
+                      <li>No Streamlit rerun loop.</li>
+                      <li>No client framework hydration.</li>
+                      <li>No charting library payload.</li>
+                      <li>Lazy data fetch per tab.</li>
+                    </ul>
+                  </fieldset>
+                  <fieldset>
+                    <legend>Interface language</legend>
+                    <div class="stacked-lines compact">
+                      <p>Window shells and title bars follow 7.css window markup.</p>
+                      <p>Tabs use `role="tablist"` and `role="tabpanel"`.</p>
+                      <p>Controls stay semantic, which is what 7.css expects.</p>
+                    </div>
+                  </fieldset>
+                </div>
+              </article>
+            </aside>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js" defer></script>
+  </body>
+</html>

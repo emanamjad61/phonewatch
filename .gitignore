@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Local environments
+.venv/
+venv/
+env/
+phonewatch_env/
+
+# OS/editor noise
+.DS_Store
+.idea/
+.vscode/
+
+# Runtime outputs
+logs/*
+!logs/.gitkeep
+data/quick_test_download.mp4
+data/quick_test_synthetic.mp4
+
+# Local model downloads and exports
+/yolov8n.pt
+logs/*.onnx
+
+# Optional generated datasets; keep paths explicit if you decide to version data.
+data/raw/
+data/processed/
+data/augmented/
+
+# Streamlit
+.streamlit/secrets.toml
